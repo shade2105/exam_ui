@@ -4,6 +4,7 @@ import {
   FlatList, KeyboardAvoidingView, Platform, StyleSheet, Image
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
@@ -17,7 +18,14 @@ type Message = {
   time: string;
 };
 
-export default function App() {
+type Stats = {
+  total: number;
+  outgoing: number;
+  incoming: number;
+  images: number;
+};
+
+export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", text: "Привіт! Як справи?", type: "incoming", time: formatTime(new Date()) },
     { id: "2", text: "Все добре, дякую!", type: "outgoing", time: formatTime(new Date()) },
@@ -31,6 +39,15 @@ export default function App() {
     }, 100);
   }, [messages]);
 
+  const updateStats = async (type: "outgoing" | "incoming", isImage = false) => {
+    const raw = await AsyncStorage.getItem("stats");
+    const stats: Stats = raw ? JSON.parse(raw) : { total: 0, outgoing: 0, incoming: 0, images: 0 };
+    stats.total += 1;
+    stats[type] += 1;
+    if (isImage) stats.images += 1;
+    await AsyncStorage.setItem("stats", JSON.stringify(stats));
+  };
+
   const sendMessage = () => {
     if (input.trim() === "") return;
     const newMessage: Message = {
@@ -40,6 +57,7 @@ export default function App() {
       time: formatTime(new Date()),
     };
     setMessages((prev) => [...prev, newMessage]);
+    updateStats("outgoing");
     setInput("");
 
     setTimeout(() => {
@@ -50,6 +68,7 @@ export default function App() {
         time: formatTime(new Date()),
       };
       setMessages((prev) => [...prev, reply]);
+      updateStats("incoming");
     }, 1000);
   };
 
@@ -70,6 +89,7 @@ export default function App() {
         time: formatTime(new Date()),
       };
       setMessages((prev) => [...prev, newMessage]);
+      updateStats("outgoing", true);
     }
   };
 

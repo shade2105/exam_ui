@@ -1,9 +1,29 @@
 import { Tabs } from "expo-router";
+import { Text } from "react-native";
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}>
-      <Tabs.Screen name="index" />
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarLabel: "Чат",
+          tabBarIcon: () => <Text>💬</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          tabBarLabel: "Статистика",
+          tabBarIcon: () => <Text>📊</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
