@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  FlatList, KeyboardAvoidingView, Platform, StyleSheet
+  FlatList, KeyboardAvoidingView, Platform, StyleSheet, Image
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
@@ -10,7 +11,8 @@ function formatTime(date: Date) {
 
 type Message = {
   id: string;
-  text: string;
+  text?: string;
+  image?: string;
   type: "incoming" | "outgoing";
   time: string;
 };
@@ -28,7 +30,7 @@ export default function App() {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
-  
+
   const sendMessage = () => {
     if (input.trim() === "") return;
     const newMessage: Message = {
@@ -39,26 +41,51 @@ export default function App() {
     };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
-	
-	setTimeout(() => {
+
+    setTimeout(() => {
       const reply: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Отримав твоє повідомлення!",
+        text: "Ні, ти!",
         type: "incoming",
         time: formatTime(new Date()),
       };
       setMessages((prev) => [...prev, reply]);
     }, 1000);
   };
-  
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        image: result.assets[0].uri,
+        type: "outgoing",
+        time: formatTime(new Date()),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+    }
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isOutgoing = item.type === "outgoing";
     return (
       <View style={[styles.messageWrapper, isOutgoing ? styles.outgoingWrapper : styles.incomingWrapper]}>
         <View style={[styles.bubble, isOutgoing ? styles.outgoingBubble : styles.incomingBubble]}>
-          <Text style={[styles.messageText, isOutgoing ? styles.outgoingText : styles.incomingText]}>
-            {item.text}
-          </Text>
+          {item.image && (
+            <Image source={{ uri: item.image }} style={styles.messageImage} />
+          )}
+          {item.text && (
+            <Text style={[styles.messageText, isOutgoing ? styles.outgoingText : styles.incomingText]}>
+              {item.text}
+            </Text>
+          )}
           <Text style={[styles.timeText, isOutgoing ? styles.outgoingTime : styles.incomingTime]}>
             {item.time}
           </Text>
@@ -66,8 +93,8 @@ export default function App() {
       </View>
     );
   };
-  
-return (
+
+  return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -86,6 +113,9 @@ return (
       />
 
       <View style={styles.inputRow}>
+        <TouchableOpacity style={styles.imageBtn} onPress={pickImage}>
+          <Text style={styles.imageBtnText}>🖼</Text>
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={input}
@@ -120,7 +150,10 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 11, marginTop: 4, alignSelf: "flex-end" },
   incomingTime: { color: "#999" },
   outgoingTime: { color: "rgba(255,255,255,0.7)" },
+  messageImage: { width: 200, height: 200, borderRadius: 10, marginBottom: 4 },
   inputRow: { flexDirection: "row", padding: 12, backgroundColor: "white", alignItems: "flex-end", gap: 8, borderTopWidth: 1, borderTopColor: "#eee" },
+  imageBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "#f0f2f5", borderRadius: 20 },
+  imageBtnText: { fontSize: 20 },
   input: { flex: 1, backgroundColor: "#f0f2f5", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100, color: "#1a1a2e" },
   sendBtn: { backgroundColor: "#4a90e2", borderRadius: 20, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
   sendBtnText: { color: "white", fontSize: 18 },
