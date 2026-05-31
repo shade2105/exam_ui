@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   FlatList, KeyboardAvoidingView, Platform, StyleSheet
@@ -21,6 +21,13 @@ export default function App() {
     { id: "2", text: "Все добре, дякую!", type: "outgoing", time: formatTime(new Date()) },
   ]);
   const [input, setInput] = useState("");
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, [messages]);
   
   const sendMessage = () => {
     if (input.trim() === "") return;
@@ -32,6 +39,16 @@ export default function App() {
     };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
+	
+	setTimeout(() => {
+      const reply: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Отримав твоє повідомлення!",
+        type: "incoming",
+        time: formatTime(new Date()),
+      };
+      setMessages((prev) => [...prev, reply]);
+    }, 1000);
   };
   
   const renderMessage = ({ item }: { item: Message }) => {
@@ -61,6 +78,7 @@ return (
       </View>
 
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messageList}
