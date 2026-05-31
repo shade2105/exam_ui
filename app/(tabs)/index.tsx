@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View, Text, TextInput, TouchableOpacity,
+  FlatList, KeyboardAvoidingView, Platform, StyleSheet
+} from "react-native";
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
@@ -13,10 +16,23 @@ type Message = {
 };
 
 export default function App() {
-  const [messages] = useState<Message[]>([
-    { id: "1", text: "Привіт від React!", type: "incoming", time: formatTime(new Date()) },
-    { id: "2", text: "Привіт!", type: "outgoing", time: formatTime(new Date()) },
+  const [messages, setMessages] = useState<Message[]>([
+    { id: "1", text: "Привіт! Як справи?", type: "incoming", time: formatTime(new Date()) },
+    { id: "2", text: "Все добре, дякую!", type: "outgoing", time: formatTime(new Date()) },
   ]);
+  const [input, setInput] = useState("");
+  
+  const sendMessage = () => {
+    if (input.trim() === "") return;
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: input.trim(),
+      type: "outgoing",
+      time: formatTime(new Date()),
+    };
+    setMessages((prev) => [...prev, newMessage]);
+    setInput("");
+  };
   
   const renderMessage = ({ item }: { item: Message }) => {
     const isOutgoing = item.type === "outgoing";
@@ -35,17 +51,37 @@ export default function App() {
   };
   
 return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
+
       <View style={styles.header}>
         <Text style={styles.headerText}>Чат</Text>
       </View>
+
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messageList}
         renderItem={renderMessage}
       />
-    </View>
+
+      <View style={styles.inputRow}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Введіть повідомлення..."
+          placeholderTextColor="#999"
+          multiline
+        />
+        <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
+          <Text style={styles.sendBtnText}>➤</Text>
+        </TouchableOpacity>
+      </View>
+
+    </KeyboardAvoidingView>
   );
 }
 
@@ -66,4 +102,8 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 11, marginTop: 4, alignSelf: "flex-end" },
   incomingTime: { color: "#999" },
   outgoingTime: { color: "rgba(255,255,255,0.7)" },
+  inputRow: { flexDirection: "row", padding: 12, backgroundColor: "white", alignItems: "flex-end", gap: 8, borderTopWidth: 1, borderTopColor: "#eee" },
+  input: { flex: 1, backgroundColor: "#f0f2f5", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, maxHeight: 100, color: "#1a1a2e" },
+  sendBtn: { backgroundColor: "#4a90e2", borderRadius: 20, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+  sendBtnText: { color: "white", fontSize: 18 },
 });
